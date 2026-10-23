@@ -1,0 +1,7 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Campaign Full Stack" type="CompoundRunConfigurationType">
+    <toRun name="Campaign Frontend" type="js.build_tools.npm" />
+    <toRun name="CampaignApplication" type="SpringBootApplicationConfigurationType" />
+    <method v="2" />
+  </configuration>
+</component>
