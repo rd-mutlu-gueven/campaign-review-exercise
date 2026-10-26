@@ -1,0 +1,197 @@
+@if (campaign) {
+  <div class="page">
+    <h1>{{ campaign.name }}</h1>
+    <dsa-badge
+      [text]="statusLabel"
+      [intention]="campaign.status == 'ACTIVE' ? 'success' : 'neutral'"
+    />
+    <p>{{ validFromText }} - {{ validToText }} | Owner: {{ campaign.owner }}</p>
+
+    <h2>Details</h2>
+    <div class="grid">
+    <dsa-form-field label="Name" [errorMsg]="errors.name">
+      <input
+        dsa-input
+        [(ngModel)]="campaign.name"
+        (ngModelChange)="onNameChange()"
+        [dsaError]="!!errors.name"
+      />
+    </dsa-form-field>
+    <dsa-form-field label="Description">
+      <textarea dsa-textarea [(ngModel)]="campaign.description"></textarea>
+    </dsa-form-field>
+    <dsa-form-field label="Status">
+      <dsa-select
+        [ngModel]="statusItem"
+        (ngModelChange)="onStatusChange($event)"
+        [dataSource]="statusItems"
+        noSearch
+      />
+    </dsa-form-field>
+    <dsa-form-field label="Valid from">
+      <input
+        dsa-input
+        type="date"
+        [(ngModel)]="campaign.validFrom"
+        (ngModelChange)="onDatesChange()"
+      />
+    </dsa-form-field>
+    <dsa-form-field label="Valid to" [errorMsg]="errors.dates">
+      <input
+        dsa-input
+        type="date"
+        [(ngModel)]="campaign.validTo"
+        (ngModelChange)="onDatesChange()"
+        [dsaError]="!!errors.dates"
+      />
+    </dsa-form-field>
+    <dsa-form-field label="Regions (comma separated)">
+      <input dsa-input [(ngModel)]="regionsText" />
+    </dsa-form-field>
+    <dsa-form-field label="Stores (comma separated)">
+      <input dsa-input [(ngModel)]="storesText" />
+    </dsa-form-field>
+    <dsa-form-field label="Budget" dsaInputSuffixText="EUR" [errorMsg]="errors.budget">
+      <input
+        dsa-input
+        type="number"
+        [(ngModel)]="campaign.budgetTotal"
+        (ngModelChange)="onBudgetChange()"
+        [dsaError]="!!errors.budget"
+      />
+    </dsa-form-field>
+
+    </div>
+
+    <h2>Budget</h2>
+    <dsa-info-card
+      variant="compact"
+      deactivateClose
+      [infoType]="remaining < 0 ? 'danger' : 'neutral'"
+    >
+      <dsa-info-card-title>Remaining: {{ remaining }} EUR</dsa-info-card-title>
+      <span>
+        Total: {{ campaign.budgetTotal }} EUR | Allocated: {{ allocatedTotal }} EUR
+        @if (budget) {
+          | Server says remaining: {{ budget.remaining }} EUR
+        }
+      </span>
+    </dsa-info-card>
+    <dsa-linear-progress-indicator
+      progression="determinate"
+      statusLabel="Budget used"
+      displayValue
+      [intention]="allocatedTotal > campaign.budgetTotal ? 'danger' : 'primary'"
+      [value]="(allocatedTotal / campaign.budgetTotal) * 100"
+    />
+
+    <h2>Line items</h2>
+    <dsa-table [value]="lineItems">
+      <ng-template dsaTemplate="header">
+        <tr>
+          <th>Coupon</th>
+          <th>Weighting</th>
+          <th>Allocation</th>
+          <th></th>
+        </tr>
+      </ng-template>
+      <ng-template dsaTemplate="body" let-li let-i="rowIndex">
+        <tr>
+          <td>
+            <dsa-form-field>
+              <input dsa-input aria-label="Coupon" [(ngModel)]="li.couponRef" />
+            </dsa-form-field>
+          </td>
+          <td>
+            <dsa-form-field>
+              <input
+                dsa-input
+                type="number"
+                aria-label="Weighting"
+                [(ngModel)]="li.weighting"
+                (ngModelChange)="onWeightChange(li)"
+              />
+            </dsa-form-field>
+          </td>
+          <td>{{ li.allocation }} EUR</td>
+          <td>
+            <button
+              dsa-button
+              type="button"
+              hierarchy="tertiary"
+              intention="danger"
+              (click)="removeLineItem(i)"
+            >
+              Remove
+            </button>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template dsaTemplate="emptymessage">
+        <tr>
+          <td colspan="4">No line items</td>
+        </tr>
+      </ng-template>
+    </dsa-table>
+    <button dsa-button type="button" (click)="addLineItem()">Add line item</button>
+
+    <h2>Find coupon</h2>
+    <dsa-form-field
+      label="Search coupons"
+      supportingText="Search by title or code"
+      dsaInputSupportingIconName="search"
+      [dsaInputClearButton]="couponQuery !== ''"
+      (dsaInputClearButtonClick)="clearCouponSearch()"
+    >
+      <input dsa-input [(ngModel)]="couponQuery" (ngModelChange)="onCouponQueryChange()" />
+    </dsa-form-field>
+    @if (couponSearching) {
+      <dsa-linear-progress-indicator />
+    }
+    @if (couponResults.length > 0) {
+      <dsa-table [value]="couponResults">
+        <ng-template dsaTemplate="header">
+          <tr>
+            <th>Code</th>
+            <th>Title</th>
+            <th>Discount</th>
+            <th></th>
+          </tr>
+        </ng-template>
+        <ng-template dsaTemplate="body" let-k>
+          <tr>
+            <td>{{ k.code }}</td>
+            <td>{{ k.title }}</td>
+            <td>{{ k.discountValue }}{{ k.discountType == 'PERCENT' ? ' %' : ' EUR' }}</td>
+            <td>
+              <button dsa-button type="button" hierarchy="tertiary" (click)="addCoupon(k)">
+                Add to campaign
+              </button>
+            </td>
+          </tr>
+        </ng-template>
+      </dsa-table>
+    }
+
+    <h2>Summary</h2>
+    <dsa-info-card variant="minimal" deactivateClose>
+      Items: {{ lineItems.length }} | Regions: {{ campaign.salesRegions.length }} | Stores:
+      {{ campaign.storeIds.length }} | Budget used:
+      {{ ((allocatedTotal / campaign.budgetTotal) * 100).toFixed(1) }} %
+    </dsa-info-card>
+
+    <div class="actions">
+      <button dsa-button type="button" hierarchy="primary" (click)="save()" [disabled]="saving || !dirty">
+        Save
+      </button>
+      @if (canActivate) {
+        <button dsa-button type="button" (click)="activate()">Activate</button>
+      }
+      @if (message) {
+        <dsa-info-card variant="minimal" infoType="success" deactivateClose>
+          {{ message }}
+        </dsa-info-card>
+      }
+    </div>
+  </div>
+}

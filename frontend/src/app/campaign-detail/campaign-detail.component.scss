@@ -1,0 +1,22 @@
+.page {
+  max-width: 960px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--rds-spacing-4);
+}
+
+.actions {
+  display: flex;
+  gap: var(--rds-spacing-4);
+  align-items: center;
+}
+
+dsa-info-card,
+dsa-linear-progress-indicator,
+dsa-table {
+  display: block;
+  margin-block: var(--rds-spacing-4);
+}
